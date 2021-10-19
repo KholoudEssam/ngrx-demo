@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { Post } from '../models/post.model';
 import { environment } from '../../environments/environment';
+import { catchError, map, tap } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
@@ -20,26 +21,35 @@ export class PostsService {
     return this.postsUpdated.asObservable();
   }
 
-  getPosts(pageSize: number, currentPage: number) {
-    const queryParams = `?pagesize=${pageSize}&currentpage=${currentPage}`;
-    this._http
-      .get<{ posts: Post[]; postsCount: number }>(`${this.BEUrl}${queryParams}`)
-      .subscribe((data) => {
-        this.posts = data.posts;
-        this.postsCount = data.postsCount;
-        this.postsUpdated.next({
-          posts: [...this.posts],
-          postsCount: this.postsCount,
-        });
-      });
-    return this.postsUpdatedListener();
+  getPosts() {
+    return this._http
+      .get<{ posts: Post[]; postsCount: number }>(this.BEUrl)
+      .pipe(
+        map((data) => data.posts),
+        catchError((err) => err.message)
+      ) as Observable<Post[]>;
   }
+
+  // getPosts(pageSize: number, currentPage: number) {
+  //   const queryParams = `?pagesize=${pageSize}&currentpage=${currentPage}`;
+  //   this._http
+  //     .get<{ posts: Post[]; postsCount: number }>(`${this.BEUrl}${queryParams}`)
+  //     .subscribe((data) => {
+  //       this.posts = data.posts;
+  //       this.postsCount = data.postsCount;
+  //       this.postsUpdated.next({
+  //         posts: [...this.posts],
+  //         postsCount: this.postsCount,
+  //       });
+  //     });
+  //   return this.postsUpdatedListener();
+  // }
 
   getPost(id) {
     return this._http.get<Post>(`${this.BEUrl}/${id}`);
   }
 
-  addPosts(post: FormData) {
+  addPost(post: FormData) {
     return this._http.post<Post>(`${this.BEUrl}`, post);
   }
 
@@ -48,6 +58,6 @@ export class PostsService {
   }
 
   deletePost(id: string) {
-    return this._http.delete(`${this.BEUrl}/${id}`);
+    return this._http.delete(`${this.BEUrl}/${id}`) as Observable<string>;
   }
 }

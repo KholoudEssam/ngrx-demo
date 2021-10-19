@@ -129,6 +129,7 @@
   },
   "defaultProject": "doki-doki",
   "cli": {
-    "analytics": false
+    "analytics": false,
+    "defaultCollection": "@ngrx/schematics"
   }
 }

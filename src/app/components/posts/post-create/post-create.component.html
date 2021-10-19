@@ -1,5 +1,5 @@
-<mat-spinner *ngIf="loading"></mat-spinner>
-<mat-card *ngIf="!loading">
+<mat-spinner *ngIf="loading$ | async"></mat-spinner>
+<mat-card *ngIf="!(loading$ | async)">
   <form [formGroup]="form" (submit)="onSubmitForm()">
     <mat-form-field>
       <input

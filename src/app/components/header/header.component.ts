@@ -1,6 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from 'src/app/services/auth.service';
+import { Store } from '@ngrx/store';
+import { Observable } from 'rxjs';
+import { getIsAuth, State } from '../auth/state';
+import * as AuthActions from '../auth/state/auth.actions';
+import { getCurrentUrl } from '../posts/state';
 
 @Component({
   selector: 'app-header',
@@ -8,20 +12,22 @@ import { AuthService } from 'src/app/services/auth.service';
   styleUrls: ['./header.component.css'],
 })
 export class HeaderComponent implements OnInit {
-  isAuth: boolean;
-  constructor(private authService: AuthService, private router: Router) {}
+  isAuth$: Observable<boolean>;
+  constructor(private store: Store<State>, private router: Router) {}
 
   ngOnInit(): void {
-    this.authService.isAuth.subscribe((res) => {
-      this.isAuth = res;
-      console.log(res);
-    });
+    this.isAuth$ = this.store.select(getIsAuth);
+
+    this.isAuth$.subscribe((isA) => console.log(isA));
   }
 
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
-    this.authService.isAuth.next(false);
-    this.router.navigate(['/']);
+
+    this.store.dispatch(AuthActions.logout());
+    this.store.select(getCurrentUrl).subscribe((url) => {
+      this.router.navigate([url]);
+    });
   }
 }

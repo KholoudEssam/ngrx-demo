@@ -1,6 +1,8 @@
-<div class="err" *ngIf="isErr && !loading">Invalid data</div>
-<mat-spinner *ngIf="loading"></mat-spinner>
-<mat-card *ngIf="!loading">
+<div class="err" *ngIf="(isErr$ | async) && !(loading$ | async)">
+  Invalid data
+</div>
+<mat-spinner *ngIf="loading$ | async"></mat-spinner>
+<mat-card *ngIf="!(loading$ | async)">
   <form #f="ngForm" (submit)="onSubmitForm(f)">
     <mat-form-field [appearance]="">
       <input

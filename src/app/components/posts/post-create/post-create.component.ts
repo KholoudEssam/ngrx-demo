@@ -1,10 +1,14 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { PostsService } from 'src/app/services/posts.service';
+import { Store } from '@ngrx/store';
+import { Observable, Subscription } from 'rxjs';
 import { Post } from '../../../models/post.model';
+import { PostState } from '../state/posts.reducer';
 import { mimeType } from './mimeType.validator';
+import * as PostsActions from '../state/posts.actions';
+import { getCurrentUrl, getSinglePost, toggleSpinnerS } from '../state';
+import { tap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-post-create',
@@ -15,17 +19,42 @@ export class PostCreateComponent implements OnInit, OnDestroy {
   sub: Subscription;
   form: FormGroup;
   editMode: Boolean = false;
-  loading = false;
+  loading$: Observable<boolean>;
+  post$: Observable<Post>;
   postId: string;
   previewImage: any;
 
   constructor(
-    public postsService: PostsService,
+    private store: Store<PostState>,
     private route: ActivatedRoute,
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.initForm();
+
+    this.sub = this.route.paramMap.subscribe((param) => {
+      this.loading$ = this.store.select(toggleSpinnerS);
+      if (param.has('id')) {
+        this.editMode = true;
+        this.postId = param.get('id');
+
+        this.store.dispatch(PostsActions.getPost({ id: this.postId }));
+
+        this.store.select(getSinglePost).subscribe((post) => {
+          this.form.patchValue({
+            title: post.title,
+            content: post.content,
+            imageUrl: post.imageUrl,
+          });
+        });
+      } else {
+        this.loading$ = this.store.select(toggleSpinnerS);
+      }
+    });
+  }
+
+  initForm() {
     this.form = new FormGroup({
       title: new FormControl(null, {
         validators: [Validators.required, Validators.minLength(5)],
@@ -35,24 +64,6 @@ export class PostCreateComponent implements OnInit, OnDestroy {
         validators: [Validators.required],
         asyncValidators: [mimeType],
       }),
-    });
-    this.sub = this.route.paramMap.subscribe((param) => {
-      this.loading = true;
-      if (param.has('id')) {
-        this.editMode = true;
-        this.postId = param.get('id');
-        this.postsService.getPost(this.postId).subscribe((post) => {
-          // console.log(post);
-          this.form.setValue({
-            title: post.title,
-            content: post.content,
-            imageUrl: post.imageUrl,
-          });
-          this.loading = false;
-        });
-      } else {
-        this.loading = false;
-      }
     });
   }
 
@@ -68,7 +79,7 @@ export class PostCreateComponent implements OnInit, OnDestroy {
   }
 
   onSubmitForm() {
-    this.loading = true;
+    this.loading$ = this.store.select(toggleSpinnerS);
 
     const { title, content, imageUrl } = this.form.value;
     let postData = new FormData();
@@ -81,25 +92,16 @@ export class PostCreateComponent implements OnInit, OnDestroy {
     }
 
     if (this.editMode) {
-      this.postsService.updatePost(this.postId, postData).subscribe((res) => {
-        this.loading = false;
-
-        if (res) {
-          this.postsService.postsUpdated.next();
-          this.router.navigate(['/']);
-        }
+      this.store.dispatch(
+        PostsActions.editPost({ id: this.postId, updatedPost: postData })
+      );
+      this.store.select(getCurrentUrl).subscribe((url) => {
+        this.router.navigate([url]);
       });
     } else {
-      this.postsService.addPosts(postData).subscribe((res) => {
-        // console.log('res', res);
-        this.loading = false;
-
-        if (res) {
-          if (res) {
-            this.router.navigate(['/']);
-            this.postsService.postsUpdated.next();
-          }
-        }
+      this.store.dispatch(PostsActions.addPost({ post: postData }));
+      this.store.select(getCurrentUrl).subscribe((url) => {
+        this.router.navigate([url]);
       });
     }
   }

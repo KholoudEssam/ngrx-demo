@@ -2,22 +2,22 @@
   <span><a routerLink="/">Posts</a></span>
   <span class="spacer"></span>
   <ul>
-    <li *ngIf="!isAuth">
+    <li *ngIf="!(isAuth$ | async)">
       <a routerLink="/auth/login" mat-button routerLinkActive="mat-accent"
         >Login</a
       >
     </li>
-    <li *ngIf="!isAuth">
+    <li *ngIf="!(isAuth$ | async)">
       <a routerLink="/auth/signup" mat-button routerLinkActive="mat-accent"
         >Sign up</a
       >
     </li>
-    <li *ngIf="isAuth">
+    <li *ngIf="isAuth$ | async">
       <a routerLink="/create" mat-button routerLinkActive="mat-accent"
         >New Post</a
       >
     </li>
-    <li *ngIf="isAuth">
+    <li *ngIf="isAuth$ | async">
       <button mat-button (click)="logout()">Logout</button>
     </li>
   </ul>

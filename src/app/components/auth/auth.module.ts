@@ -5,6 +5,10 @@ import { SignupComponent } from './signup/signup.component';
 import { FormsModule } from '@angular/forms';
 import { AppAngularMaterialModule } from 'src/app/app-angular-material.module';
 import { AuthRoutingModule } from './auth-routing.module';
+import { StoreModule } from '@ngrx/store';
+import { EffectsModule } from '@ngrx/effects';
+import { authReducer } from './state/auth.reducer';
+import { AuthEffects } from './state/auth.effects';
 
 @NgModule({
   declarations: [LoginComponent, SignupComponent],
@@ -13,6 +17,8 @@ import { AuthRoutingModule } from './auth-routing.module';
     FormsModule,
     AppAngularMaterialModule,
     AuthRoutingModule,
+    StoreModule.forFeature('auth', authReducer),
+    EffectsModule.forFeature([AuthEffects]),
   ],
 })
 export class AuthModule {}
